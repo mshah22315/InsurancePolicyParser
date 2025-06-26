@@ -53,6 +53,13 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/database_name
 # Google Cloud Storage
 GOOGLE_CLOUD_STORAGE_BUCKET=your-bucket-name
 GOOGLE_AI_API_KEY=your-api-key
+GOOGLE_APPLICATION_CREDENTIALS = "path/to/your/credentials"
+GCS_ORIGINAL_PDFS_PREFIX=your-bucket-name/original_pdfs/timestamp_uuid_original.pdf
+GCS_STRUCTURED_JSONS_PREFIX=your_bucket_name/structured_jsons/timestamp_uuid_structured.json
+
+# Vector Embedding Model and Dimensions Used
+EMBEDDING_MODEL_ID=text-embedding-004
+EMBEDDING_DIMENSIONS=768
 
 # Celery (optional, defaults to localhost)
 CELERY_BROKER_URL=redis://localhost:6379/0
