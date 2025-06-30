@@ -42,7 +42,98 @@ redis-server
 docker run -d -p 6379:6379 redis:alpine
 ```
 
-### 3. Set Environment Variables
+### 3. Redis Configuration (Windows)
+
+The pipeline requires Redis to be running as a message broker and result backend. Here's how to set it up on Windows:
+
+#### Option A: Download and Run Redis Manually
+
+1. **Download Redis for Windows:**
+   - Go to https://github.com/microsoftarchive/redis/releases
+   - Download the latest release (e.g., `Redis-x64-3.0.504.zip`)
+   - Extract to a folder (e.g., `C:\Users\manth\Downloads\Redis-x64-3.0.504\`)
+
+2. **Start Redis Server:**
+   ```cmd
+   # Open Command Prompt as Administrator
+   C:\Users\manth\Downloads\Redis-x64-3.0.504\redis-server.exe C:\Users\manth\Downloads\Redis-x64-3.0.504\redis.windows.conf
+   ```
+
+3. **Verify Redis is Running:**
+   ```bash
+   python -c "import redis; r = redis.Redis(); r.ping(); print('Redis is working!')"
+   ```
+
+#### Option B: Install Redis as Windows Service
+
+1. **Install Redis Service:**
+   ```cmd
+   # Run as Administrator
+   C:\Users\manth\Downloads\Redis-x64-3.0.504\redis-server.exe --service-install C:\Users\manth\Downloads\Redis-x64-3.0.504\redis.windows.conf
+   ```
+
+2. **Start Redis Service:**
+   ```cmd
+   net start Redis
+   ```
+
+3. **Stop Redis Service:**
+   ```cmd
+   net stop Redis
+   ```
+
+#### Option C: Using Docker (if Docker Desktop is available)
+
+1. **Start Docker Desktop**
+2. **Run Redis Container:**
+   ```bash
+   docker run -d --name redis-server -p 6379:6379 redis:alpine
+   ```
+
+#### Windows-Specific Celery Configuration
+
+**Important:** On Windows, Celery workers must use the `solo` pool to avoid multiprocessing issues:
+
+```bash
+# Start Celery worker with solo pool
+celery -A celery_config worker --loglevel=info --pool=solo
+```
+
+**Why use `--pool=solo` on Windows?**
+- The default `prefork` pool has known issues with Windows multiprocessing
+- The `solo` pool runs all tasks in a single process, avoiding these issues
+- This is the recommended approach for Windows environments
+
+#### Troubleshooting Redis on Windows
+
+**Common Issues:**
+
+1. **"Access is denied" errors:**
+   - Run Command Prompt as Administrator
+   - Check Windows Defender/firewall settings
+
+2. **"Connection refused" errors:**
+   - Ensure Redis server is actually running
+   - Check if port 6379 is not blocked by firewall
+   - Verify Redis is binding to `127.0.0.1:6379`
+
+3. **Redis not starting:**
+   - Check if another Redis instance is already running
+   - Verify the configuration file path is correct
+   - Check Windows Event Viewer for error messages
+
+**Testing Redis Connection:**
+```python
+import redis
+try:
+    r = redis.Redis(host='localhost', port=6379, db=0)
+    r.ping()
+    print("✓ Redis connection successful")
+except Exception as e:
+    print(f"✗ Redis connection failed: {e}")
+```
+
+### 4. Set Environment Variables
 
 Create a `.env` file with your configuration:
 
@@ -66,7 +157,7 @@ CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
-### 4. Initialize Database
+### 5. Initialize Database
 
 ```bash
 flask db upgrade
@@ -91,7 +182,7 @@ python run.py
 
 **Terminal 2 - Celery Worker:**
 ```bash
-python -m celery -A celery_config worker --loglevel=info
+python -m celery -A celery_config worker --loglevel=info --pool=solo
 ```
 
 ## Usage
@@ -222,7 +313,8 @@ The pipeline includes comprehensive error handling:
 ## Scaling Considerations
 
 ### Horizontal Scaling
-- Run multiple Celery workers: `celery -A celery_config worker --loglevel=info --concurrency=4`
+- Run multiple Celery workers: `celery -A celery_config worker --loglevel=info --concurrency=4 --pool=solo` (Windows)
+- **Note:** On Windows, use `--pool=solo` to avoid multiprocessing issues
 - Use Redis Cluster for high availability
 - Load balance Flask application instances
 
@@ -239,6 +331,8 @@ The pipeline includes comprehensive error handling:
 1. **Redis Connection Error**
    - Ensure Redis server is running
    - Check Redis connection settings in config
+   - **Windows:** Run Command Prompt as Administrator when starting Redis
+   - **Windows:** Check Windows Defender/firewall settings
 
 2. **Database Connection Error**
    - Verify database credentials in `.env`
@@ -248,6 +342,8 @@ The pipeline includes comprehensive error handling:
    - Check if Redis is running
    - Verify Celery configuration
    - Check for import errors in task modules
+   - **Windows:** Use `--pool=solo` flag to avoid multiprocessing issues
+   - **Windows:** "Access is denied" errors usually require running as Administrator
 
 4. **Task Failures**
    - Check task logs for specific error messages
