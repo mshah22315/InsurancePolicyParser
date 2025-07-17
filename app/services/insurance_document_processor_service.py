@@ -4,28 +4,88 @@ from datetime import datetime, date
 from io import BytesIO
 from PIL import Image
 import fitz  # PyMuPDF
-import google.generativeai as genai
 from flask import current_app
 from ..models import ProcessedPolicyData
-from app.utils.gcs_utils import upload_to_gcs, download_from_gcs
-from google.cloud import storage
-import uuid
 from ..db import db
+from app.utils.text_utils import extract_raw_text
 
 class InsuranceDocumentProcessorService:
     def __init__(self):
-        # Initialize Google Cloud Storage client
-        self.storage_client = storage.Client()
-        self.bucket = self.storage_client.bucket(current_app.config['GOOGLE_CLOUD_STORAGE_BUCKET'])
+        # Check if Google services are available
+        self.use_google_services = (
+            current_app.config.get('GOOGLE_CLOUD_STORAGE_BUCKET') and 
+            current_app.config.get('GOOGLE_AI_API_KEY')
+        )
         
-        # Initialize Google AI
-        genai.configure(api_key=current_app.config['GOOGLE_AI_API_KEY'])
-        self.vision_model = genai.GenerativeModel('gemini-1.5-flash')
-        self.text_model = genai.GenerativeModel('gemini-1.5-flash')
+        # For local development, prefer Google services if available
+        if not self.use_google_services:
+            current_app.logger.warning("Google services not configured - check your API keys and bucket name")
+            current_app.logger.warning("Set GOOGLE_AI_API_KEY and GOOGLE_CLOUD_STORAGE_BUCKET in local.env")
         
-        # Get GCS path prefixes
-        self.original_pdfs_prefix = current_app.config['GCS_ORIGINAL_PDFS_PREFIX']
-        self.structured_jsons_prefix = current_app.config['GCS_STRUCTURED_JSONS_PREFIX']
+        if self.use_google_services:
+            # Initialize Google Cloud Storage client
+            from google.cloud import storage
+            import google.generativeai as genai
+            
+            self.storage_client = storage.Client()
+            self.bucket = self.storage_client.bucket(current_app.config['GOOGLE_CLOUD_STORAGE_BUCKET'])
+            
+            # Initialize Google AI
+            genai.configure(api_key=current_app.config['GOOGLE_AI_API_KEY'])
+            self.vision_model = genai.GenerativeModel('gemini-1.5-flash')
+            self.text_model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # Get GCS path prefixes
+            self.original_pdfs_prefix = current_app.config['GCS_ORIGINAL_PDFS_PREFIX']
+            self.structured_jsons_prefix = current_app.config['GCS_STRUCTURED_JSONS_PREFIX']
+        else:
+            current_app.logger.warning("Google services not configured - running in local mode")
+            self.use_google_services = False
+
+    def _extract_text_from_pdf_bytes(self, document_bytes):
+        """Extract text from PDF bytes using PyMuPDF"""
+        try:
+            import fitz  # PyMuPDF
+            doc = fitz.open(stream=document_bytes, filetype="pdf")
+            text = ""
+            for page in doc:
+                text += page.get_text()
+            doc.close()
+            return text.strip()
+        except Exception as e:
+            current_app.logger.error(f"Error extracting text from PDF bytes: {str(e)}")
+            return None
+
+    def _extract_raw_text_from_policy_data(self, policy_data):
+        """Extract raw text from policy data, trying different possible fields."""
+        # Try different possible fields for raw text
+        possible_fields = ['raw_text', 'text', 'content', 'document_text', 'full_text']
+        
+        for field in possible_fields:
+            text = policy_data.get(field)
+            if isinstance(text, str) and text.strip():
+                return text
+        
+        # If no raw text found, construct from available data
+        text_parts = []
+        
+        # Add policy details
+        for key, value in policy_data.items():
+            if key not in ['coverage_details', 'raw_text', 'text', 'content', 'document_text', 'full_text']:
+                if value is not None:
+                    text_parts.append(f"{key}: {value}")
+        
+        # Add coverage details
+        if policy_data.get('coverage_details'):
+            for coverage in policy_data['coverage_details']:
+                coverage_text = []
+                for key, value in coverage.items():
+                    if value is not None:
+                        coverage_text.append(f"{key}: {value}")
+                if coverage_text:
+                    text_parts.append("\n".join(coverage_text))
+        
+        return "\n\n".join(text_parts)
 
     def _convert_date_string(self, date_str):
         """Convert date string to Python date object."""
@@ -49,69 +109,116 @@ class InsuranceDocumentProcessorService:
 
     def process_document(self, document_bytes, filename):
         try:
-            # Upload original PDF to GCS
-            original_gcs_path = f"{current_app.config['GCS_ORIGINAL_PDFS_PREFIX']}{filename}"
-            blob = self.bucket.blob(original_gcs_path)
-            blob.upload_from_string(document_bytes, content_type='application/pdf')
-            
-            # Extract text using vision model
-            image_parts = [
-                {
-                    "mime_type": "application/pdf",
-                    "data": document_bytes
-                }
+            if self.use_google_services:
+                # Use Google services (production mode)
+                return self._process_with_google_services(document_bytes, filename)
+            else:
+                # Use local processing (development mode)
+                return self._process_locally(document_bytes, filename)
+                
+        except Exception as e:
+            current_app.logger.error(f"Error processing document: {str(e)}")
+            return {
+                'status': 'error',
+                'message': f'Error processing document: {str(e)}'
+            }
+
+    def _process_with_google_services(self, document_bytes, filename):
+        """Process document using Google Cloud Storage and AI services"""
+        # Upload original PDF to GCS
+        original_gcs_path = f"{current_app.config['GCS_ORIGINAL_PDFS_PREFIX']}{filename}"
+        blob = self.bucket.blob(original_gcs_path)
+        blob.upload_from_string(document_bytes, content_type='application/pdf')
+        
+        # Extract text using vision model
+        image_parts = [
+            {
+                "mime_type": "application/pdf",
+                "data": document_bytes
+            }
+        ]
+        
+        vision_response = self.vision_model.generate_content(
+            [
+                "Extract all text from this insurance policy document. Include policy numbers, dates, coverage details, and any other relevant information.",
+                *image_parts
             ]
+        )
+        
+        extracted_text = vision_response.text
+        
+        # Extract structured data using text model
+        structured_data = self._extract_structured_data(extracted_text)
+        
+        # Save structured data to GCS
+        processed_json_path = f"{current_app.config['GCS_STRUCTURED_JSONS_PREFIX']}{os.path.splitext(filename)[0]}.json"
+        json_blob = self.bucket.blob(processed_json_path)
+        json_blob.upload_from_string(
+            json.dumps(structured_data),
+            content_type='application/json'
+        )
+        
+        # Note: Database entry will be created by the calling endpoint
+        # This service only processes the document and returns structured data
+        
+        return {
+            'status': 'success',
+            'message': 'Document processed successfully',
+            'data': structured_data
+        }
+
+    def _process_locally(self, document_bytes, filename):
+        """Process document locally without Google services"""
+        try:
+            current_app.logger.info(f"Starting local processing for {filename}")
             
-            vision_response = self.vision_model.generate_content(
-                [
-                    "Extract all text from this insurance policy document. Include policy numbers, dates, coverage details, and any other relevant information.",
-                    *image_parts
-                ]
-            )
+            # Extract raw text from PDF
+            raw_text = self._extract_text_from_pdf_bytes(document_bytes)
             
-            extracted_text = vision_response.text
+            # Quick local processing with basic text extraction
+            structured_data = {
+                'policy_number': f'LOCAL-{filename.split(".")[0]}',
+                'insurer_name': 'Local Processing',
+                'policyholder_name': 'Processed Locally',
+                'property_address': 'Local Development',
+                'effective_date': datetime.now().strftime('%Y-%m-%d'),
+                'expiration_date': datetime.now().strftime('%Y-%m-%d'),
+                'total_premium': '0.00',
+                'coverage_details': [
+                    {
+                        'coverage_type': 'Local Processing',
+                        'limit': '0.00'
+                    }
+                ],
+                'deductibles': [
+                    {
+                        'coverage_type': 'Local Processing',
+                        'amount': '0.00',
+                        'type': 'local'
+                    }
+                ],
+                'raw_text': raw_text or f'File {filename} processed locally (no text extraction)'
+            }
             
-            # Extract structured data using text model
-            structured_data = self._extract_structured_data(extracted_text)
+            # If PDF extraction failed, construct text from structured data
+            if not raw_text:
+                raw_text = extract_raw_text(structured_data)
+                structured_data['raw_text'] = raw_text
             
-            # Save structured data to GCS
-            processed_json_path = f"{current_app.config['GCS_STRUCTURED_JSONS_PREFIX']}{os.path.splitext(filename)[0]}.json"
-            json_blob = self.bucket.blob(processed_json_path)
-            json_blob.upload_from_string(
-                json.dumps(structured_data),
-                content_type='application/json'
-            )
+            current_app.logger.info("Created structured data, returning to endpoint for database save...")
             
-            # Save to database
-            policy_data = ProcessedPolicyData(
-                policy_number=structured_data.get('policy_number'),
-                insurer_name=structured_data.get('insurer_name'),
-                policyholder_name=structured_data.get('policyholder_name'),
-                property_address=structured_data.get('property_address'),
-                effective_date=self._convert_date_string(structured_data.get('effective_date')),
-                expiration_date=self._convert_date_string(structured_data.get('expiration_date')),
-                total_premium=structured_data.get('total_premium'),
-                coverage_details=structured_data.get('coverage_details'),
-                deductibles=structured_data.get('deductibles'),
-                original_document_gcs_path=original_gcs_path,
-                processed_json_gcs_path=processed_json_path
-            )
-            
-            db.session.add(policy_data)
-            db.session.commit()
+            # Note: Database entry will be created by the calling endpoint
+            # This service only processes the document and returns structured data
             
             return {
                 'status': 'success',
-                'message': 'Document processed successfully',
+                'message': 'Document processed locally (no Google services)',
                 'data': structured_data
             }
             
         except Exception as e:
             db.session.rollback()
-            return {
-                'status': 'error',
-                'message': f'Error processing document: {str(e)}'
-            }
+            raise e
 
     def _extract_structured_data(self, text):
         prompt = """

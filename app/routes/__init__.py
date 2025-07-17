@@ -1,5 +1,10 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
 
 main = Blueprint('main', __name__)
 
-from . import policy_processing_routes 
+@main.route('/')
+def index():
+    return jsonify({'message': 'Insurance Policy Parser API', 'status': 'running'})
+
+from . import policy_processing_routes
+from . import api_adapter_routes 

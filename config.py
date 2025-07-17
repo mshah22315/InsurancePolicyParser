@@ -11,6 +11,12 @@ class Config:
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 3600,
+        "pool_size": 20,
+        "max_overflow": 10
+    }
     
     # Google Cloud Storage configuration
     GOOGLE_CLOUD_STORAGE_BUCKET = os.getenv('GOOGLE_CLOUD_STORAGE_BUCKET')
@@ -38,6 +44,9 @@ class Config:
     # Session configuration
     SESSION_TYPE = 'filesystem'
     PERMANENT_SESSION_LIFETIME = 1800  # 30 minutes
+    
+    # Upload configuration
+    UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
 
 class DevelopmentConfig(Config):
     DEBUG = True

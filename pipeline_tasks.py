@@ -353,23 +353,25 @@ def update_context_step(self, policy_numbers: List[str], invoice_paths: Optional
                     
                     # Update policy context (non-interactive version)
                     try:
-                        # Get or create policy record
-                        from scripts.store_policy_chunks import get_or_create_policy
-                        policy_record = get_or_create_policy(policy)
-                        
-                        # Update with available data
+                        # Update the ProcessedPolicyData record directly
                         if roof_age is not None:
-                            policy_record.roof_age = roof_age
+                            policy.roof_age_years = roof_age
+                            logger.info(f"Updated roof age to {roof_age} years")
                         
                         if renewal_date:
                             try:
-                                policy_record.renewal_date = datetime.strptime(renewal_date, '%Y-%m-%d').date()
+                                policy.renewal_date = datetime.strptime(renewal_date, '%Y-%m-%d').date()
+                                logger.info(f"Updated renewal date to {renewal_date}")
                             except ValueError:
                                 logger.warning(f"Invalid renewal date format: {renewal_date}")
                         
                         # Set default features if none provided
                         default_features = ["monitored_alarm"]  # Default feature
-                        policy_record.features = json.dumps(default_features)
+                        policy.property_features = default_features
+                        logger.info(f"Set default property features: {default_features}")
+                        
+                        # Update last proactive analysis timestamp
+                        policy.last_proactive_analysis = datetime.now()
                         
                         db.session.commit()
                         

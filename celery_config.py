@@ -1,10 +1,11 @@
+import os
 from celery import Celery
 
 def make_celery(app):
     celery = Celery(
         app.import_name,
-        backend=app.config.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0'),
-        broker=app.config.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+        backend=app.config.get('CELERY_RESULT_BACKEND', os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')),
+        broker=app.config.get('CELERY_BROKER_URL', os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0'))
     )
     celery.conf.update(app.config)
     
@@ -19,8 +20,8 @@ def make_celery(app):
 # Create a placeholder celery instance that will be configured later
 celery = Celery('insurance_policy_parser')
 celery.conf.update(
-    broker_url='redis://localhost:6379/0',
-    result_backend='redis://localhost:6379/0',
+    broker_url=os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0'),
+    result_backend=os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0'),
     task_serializer='json',
     result_serializer='json',
     accept_content=['json'],

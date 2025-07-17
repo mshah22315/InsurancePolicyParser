@@ -452,7 +452,31 @@ def update_policy_context(policy_number, roof_age=None, features=None, renewal_d
                         except KeyboardInterrupt:
                             break
             else:
-                logger.warning("No roofing invoice provided")
+                # Prompt for manual input if skipped
+                print("\nNo invoice provided. Please enter the roof installation date manually.")
+                while True:
+                    try:
+                        manual_date = input("Installation date (MM/DD/YYYY or YYYY-MM-DD): ").strip()
+                        if not manual_date:
+                            break
+                        # Try to parse the date
+                        if "/" in manual_date:
+                            month, day, year = manual_date.split("/")
+                            if len(year) == 2:
+                                year = "20" + year
+                            roof_installation_date = date(int(year), int(month), int(day))
+                        elif "-" in manual_date:
+                            roof_installation_date = datetime.strptime(manual_date, '%Y-%m-%d').date()
+                        else:
+                            print("❌ Invalid date format. Please use MM/DD/YYYY or YYYY-MM-DD")
+                            continue
+                        roof_age = calculate_roof_age(roof_installation_date.strftime('%Y-%m-%d'))
+                        logger.info(f"Manual input - Calculated roof age: {roof_age} years")
+                        break
+                    except ValueError:
+                        print("❌ Invalid date. Please try again.")
+                    except KeyboardInterrupt:
+                        break
         
         # Get features from user if not provided
         if features is None:
