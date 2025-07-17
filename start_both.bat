@@ -5,7 +5,7 @@ echo.
 
 REM Start backend in a new window
 echo Starting backend server...
-start "Backend Server" cmd /k "call venv_py311\Scripts\activate.bat && pip install -r requirements.txt && python run.py"
+start "Backend Server" cmd /k "call venv\Scripts\activate.bat && pip install -r requirements.txt && python run.py"
 
 REM Wait a moment for backend to start
 timeout /t 3 /nobreak > nul

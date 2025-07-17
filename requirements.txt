@@ -7,6 +7,7 @@ redis==5.0.1
 google-cloud-storage==2.10.0
 google-cloud-aiplatform==1.38.1
 google-auth==2.23.4
+google-generativeai==0.8.5
 psycopg2-binary==2.9.10
 Werkzeug==2.3.7
 SQLAlchemy==2.0.21
@@ -16,5 +17,4 @@ python-multipart==0.0.6
 flask-cors==4.0.0
 PyMuPDF==1.23.26
 Pillow==11.3.0
-python-dateutil==2.8.2
-
+python-dateutil==2.8.2 
