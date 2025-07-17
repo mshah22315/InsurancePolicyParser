@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Insurance theme colors */
+  --insurance-blue: hsl(207, 90%, 54%);
+  --insurance-light: hsl(210, 40%, 98%);
+  --insurance-success: hsl(142, 76%, 36%);
+  --insurance-error: hsl(0, 84%, 60%);
+  --insurance-warning: hsl(45, 93%, 47%);
+  --insurance-text: hsl(210, 11%, 26%);
+  --insurance-gray: hsl(213, 9%, 39%);
+  --insurance-border: hsl(210, 18%, 87%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .upload-zone {
+    @apply border-2 border-dashed border-gray-300 transition-all duration-300 ease-in-out;
+  }
+  
+  .upload-zone:hover {
+    @apply border-blue-400 bg-gray-50;
+  }
+  
+  .upload-zone.dragover {
+    @apply border-blue-500 bg-blue-50;
+  }
+  
+  .processing-animation {
+    animation: pulse 2s infinite;
+  }
+  
+  .sidebar-item {
+    @apply transition-colors duration-200;
+  }
+  
+  .sidebar-item:hover {
+    @apply bg-blue-50 text-blue-600;
+  }
+  
+  .sidebar-item.active {
+    @apply bg-blue-600 text-white;
+  }
+  
+  .data-card {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .data-card:hover {
+    @apply transform -translate-y-1 shadow-lg;
+  }
+  
+  .progress-bar {
+    @apply bg-gradient-to-r from-blue-600 to-green-500;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center gap-2;
+  }
+  
+  .status-processing {
+    @apply text-yellow-600 bg-yellow-100;
+  }
+  
+  .status-completed {
+    @apply text-green-600 bg-green-100;
+  }
+  
+  .status-error {
+    @apply text-red-600 bg-red-100;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.5; 
+  }
+}
