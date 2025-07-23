@@ -90,3 +90,16 @@ class ProcessingTask(db.Model):
     
     def __repr__(self):
         return f'<ProcessingTask {self.task_id}: {self.status}>' 
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    zip_code = db.Column(db.String(10), nullable=True)
+    policy_id = db.Column(db.Integer, nullable=True)
+    user_feedback = db.Column(db.Boolean, nullable=False)
+    user_query = db.Column(db.Text, nullable=True)
+    policy_context = db.Column(db.JSON, nullable=True)
+    feedback_comment = db.Column(db.Text, nullable=True) 

@@ -8,7 +8,7 @@ import tempfile
 import uuid
 from datetime import datetime, timedelta, date
 from sqlalchemy import func, and_
-from app.models import ProcessedPolicyData, Policy, PolicyChunk
+from app.models import ProcessedPolicyData, Policy, PolicyChunk, Feedback, db
 from app import db
 from app.utils.text_utils import extract_raw_text
 import difflib
@@ -1211,48 +1211,58 @@ def analyze_iowa_risk_factors():
     try:
         data = request.get_json()
         policy_id = data.get('policyId')
+        zip_code = data.get('zipCode')
         user_query = data.get('userQuery', '')
-        
-        if not policy_id:
-            return jsonify({'error': 'Policy ID is required'}), 400
-        
-        # Get policy and extract ZIP code from property address
-        policy = ProcessedPolicyData.query.get(int(policy_id))
-        if not policy:
-            return jsonify({'error': 'Policy not found'}), 404
-        
-        # Extract ZIP code from property address
+        policy_context = None
+
         import re
-        zip_code = None
-        if policy.property_address:
-            # Look for 5-digit ZIP code pattern
-            zip_match = re.search(r'\b(\d{5})\b', policy.property_address)
-            if zip_match:
-                zip_code = zip_match.group(1)
-        
-        if not zip_code:
-            return jsonify({'error': 'Could not extract ZIP code from property address'}), 400
-        
-        # Build policy context
-        policy_context = {
-            'policyNumber': policy.policy_number,
-            'policyholderName': policy.policyholder_name,
-            'propertyAddress': policy.property_address,
-            'effectiveDate': policy.effective_date.isoformat() if policy.effective_date else None,
-            'expirationDate': policy.expiration_date.isoformat() if policy.expiration_date else None,
-            'totalPremium': policy.total_premium,
-            'coverageDetails': policy.coverage_details,
-            'deductibles': policy.deductibles,
-            'roofAgeYears': policy.roof_age_years,
-            'propertyFeatures': policy.property_features
-        }
-        
+        # If policyId is provided, use it to extract ZIP code and context
+        if policy_id:
+            policy = ProcessedPolicyData.query.get(int(policy_id))
+            if not policy:
+                return jsonify({'error': 'Policy not found'}), 404
+            # Extract ZIP code from property address
+            zip_code = None
+            if policy.property_address:
+                zip_match = re.search(r'\b(\d{5})\b', policy.property_address)
+                if zip_match:
+                    zip_code = zip_match.group(1)
+            if not zip_code:
+                return jsonify({'error': 'Could not extract ZIP code from property address'}), 400
+            # Build policy context
+            policy_context = {
+                'policyNumber': policy.policy_number,
+                'policyholderName': policy.policyholder_name,
+                'propertyAddress': policy.property_address,
+                'effectiveDate': policy.effective_date.isoformat() if policy.effective_date else None,
+                'expirationDate': policy.expiration_date.isoformat() if policy.expiration_date else None,
+                'totalPremium': policy.total_premium,
+                'coverageDetails': policy.coverage_details,
+                'deductibles': policy.deductibles,
+                'roofAgeYears': policy.roof_age_years,
+                'propertyFeatures': policy.property_features
+            }
+        elif zip_code:
+            # Use zipCode directly, build minimal or provided context
+            policy_context = data.get('policyContext', {})
+            # Optionally, add more context fields if provided
+            policy_context.setdefault('policyNumber', None)
+            policy_context.setdefault('policyholderName', None)
+            policy_context.setdefault('propertyAddress', None)
+            policy_context.setdefault('effectiveDate', None)
+            policy_context.setdefault('expirationDate', None)
+            policy_context.setdefault('totalPremium', None)
+            policy_context.setdefault('coverageDetails', [])
+            policy_context.setdefault('deductibles', [])
+            policy_context.setdefault('roofAgeYears', None)
+            policy_context.setdefault('propertyFeatures', [])
+        else:
+            return jsonify({'error': 'Either policyId or zipCode is required'}), 400
+
         # Iowa-specific risk assessment based on ZIP code
         risk_factors = get_iowa_risk_factors(zip_code, policy_context)
-        
         # Generate recommendations using Gemini
         recommendations = generate_iowa_recommendations(zip_code, risk_factors, policy_context, user_query)
-        
         return jsonify({
             'zipCode': zip_code,
             'riskFactors': risk_factors,
@@ -1260,7 +1270,6 @@ def analyze_iowa_risk_factors():
             'policyContext': policy_context,
             'iowaSpecific': True
         })
-        
     except Exception as e:
         current_app.logger.error(f"Error analyzing Iowa risk factors: {str(e)}")
         return jsonify({'error': 'Failed to analyze risk factors'}), 500
@@ -1353,6 +1362,8 @@ def generate_iowa_recommendations(zip_code, risk_factors, policy_context, user_q
 
         User Question: {user_query if user_query else 'General risk assessment and recommendations'}
 
+        IMPORTANT: If the user requests a specific order or focus for the recommendations, follow their instructions exactly. If the user asks for coverage recommendations first, list those first in your response. Always prioritize the user's explicit instructions in the User Question.
+
         Respond ONLY with valid JSON in this format. Do not include any explanation, markdown, or text outside the JSON object:
         {{
             "riskMitigation": ["..."],
@@ -1418,3 +1429,54 @@ def generate_iowa_recommendations(zip_code, risk_factors, policy_context, user_q
             "emergencyPreparedness": ["Create emergency kit", "Develop evacuation plan"],
             "iowaSpecificNotes": ["Located in Tornado Alley", "Consider agricultural chemical exposure"]
         } 
+
+@api_adapter_bp.route('/api/feedback/risk-analysis', methods=['POST'])
+def risk_analysis_feedback():
+    """Accept user feedback (upvote/downvote) for risk analysis recommendations"""
+    try:
+        data = request.get_json()
+        zip_code = data.get('zipCode')
+        policy_id = data.get('policyId')
+        user_feedback = data.get('userFeedback')  # boolean
+        user_query = data.get('userQuery')
+        policy_context = data.get('policyContext')
+        feedback_comment = data.get('feedbackComment')
+        current_app.logger.info(f"Risk analysis feedback: zip={zip_code}, policyId={policy_id}, feedback={user_feedback}, userQuery={user_query}, policyContext={policy_context}, comment={feedback_comment}")
+        feedback = Feedback(
+            zip_code=zip_code,
+            policy_id=policy_id,
+            user_feedback=user_feedback,
+            user_query=user_query,
+            policy_context=policy_context,
+            feedback_comment=feedback_comment
+        )
+        db.session.add(feedback)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Feedback received'})
+    except Exception as e:
+        current_app.logger.error(f"Error receiving risk analysis feedback: {str(e)}")
+        return jsonify({'error': 'Failed to receive feedback'}), 500 
+
+@api_adapter_bp.route('/api/feedback/risk-analysis/history', methods=['GET'])
+def risk_analysis_feedback_history():
+    """Return the most recent feedback entries for risk analysis (limit 20, newest first)"""
+    try:
+        feedback_entries = Feedback.query.order_by(Feedback.created_at.desc()).limit(20).all()
+        result = [
+            {
+                'id': f.id,
+                'created_at': f.created_at.isoformat(),
+                'updated_at': f.updated_at.isoformat(),
+                'zip_code': f.zip_code,
+                'policy_id': f.policy_id,
+                'user_feedback': f.user_feedback,
+                'user_query': f.user_query,
+                'policy_context': f.policy_context,
+                'feedback_comment': f.feedback_comment
+            }
+            for f in feedback_entries
+        ]
+        return jsonify(result)
+    except Exception as e:
+        current_app.logger.error(f"Error fetching feedback history: {str(e)}")
+        return jsonify({'error': 'Failed to fetch feedback history'}), 500 
