@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Shield, Upload, FileText, Clock, Home, Settings, Edit3, AlertTriangle } from "lucide-react";
+import { Shield, Upload, FileText, Clock, Home, Settings, Edit3, AlertTriangle, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -9,6 +9,7 @@ const navigation = [
   { name: "Policy Context", href: "/policy-context", icon: Edit3 },
   { name: "Property Risk Factors", href: "/property-risk-factors", icon: AlertTriangle },
   { name: "Processing Queue", href: "/processing-queue", icon: Clock },
+  { name: "Policy Query System", href: "/policy-query", icon: MessageSquare },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

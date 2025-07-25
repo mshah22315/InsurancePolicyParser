@@ -11,6 +11,7 @@ import RoofingInvoices from "@/pages/roofing-invoices";
 import PolicyContext from "@/pages/policy-context";
 import PropertyRiskFactors from "@/pages/property-risk-factors";
 import NotFound from "@/pages/not-found";
+import PolicyQueryPage from "@/pages/policy-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 
@@ -29,6 +30,7 @@ function Router() {
             <Route path="/roofing-invoices" component={RoofingInvoices} />
             <Route path="/policy-context" component={PolicyContext} />
             <Route path="/property-risk-factors" component={PropertyRiskFactors} />
+            <Route path="/policy-query" component={PolicyQueryPage} />
             <Route component={NotFound} />
           </Switch>
         </main>

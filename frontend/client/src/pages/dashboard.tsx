@@ -53,18 +53,9 @@ export default function Dashboard() {
       
       {/* Main Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EnhancedUpload />
-        <PolicyQuery />
-      </div>
-      
-      {/* Secondary Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <QuickActions />
         <ProcessingStatus />
       </div>
-      
-      {/* Recent Policies */}
-      <RecentPolicies />
       
       {/* Processing Progress Overlay */}
       {activeTask && (
