@@ -209,12 +209,6 @@ npm test
 5. Run database migrations
 6. Start the application
 
-### Docker Deployment
-```bash
-# Build and run with Docker Compose
-docker-compose up --build
-```
-
 ## 🐛 Troubleshooting
 
 ### Common Issues
