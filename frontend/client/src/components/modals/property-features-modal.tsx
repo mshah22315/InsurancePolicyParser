@@ -32,19 +32,18 @@ export function PropertyFeaturesModal({ isOpen, onClose, selectedPolicyId }: Pro
   const queryClient = useQueryClient();
 
   const { data: policies = [] } = useQuery<Policy[]>({
-    queryKey: ["/api/policies"],
-    enabled: isOpen,
+    queryKey: ["http://localhost:5001/api/policies"],
   });
 
-  const { data: existingFeatures = [] } = useQuery<PropertyFeature[]>({
-    queryKey: ["/api/policies", selectedPolicyIdState, "features"],
-    enabled: !!selectedPolicyIdState && isOpen,
+  const { data: features = [] } = useQuery<PropertyFeature[]>({
+    queryKey: ["http://localhost:5001/api/policies", selectedPolicyIdState, "features"],
+    enabled: !!selectedPolicyIdState,
   });
 
   // Initialize selected features when existing features are loaded
   useState(() => {
-    if (existingFeatures.length > 0) {
-      setSelectedFeatures(new Set(existingFeatures.map(f => f.featureName)));
+    if (features.length > 0) {
+      setSelectedFeatures(new Set(features.map(f => f.featureName)));
     }
   });
 
@@ -59,7 +58,7 @@ export function PropertyFeaturesModal({ isOpen, onClose, selectedPolicyId }: Pro
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/policies", selectedPolicyIdState, "features"] });
+      queryClient.invalidateQueries({ queryKey: ["http://localhost:5001/api/policies", selectedPolicyIdState, "features"] });
     },
   });
 
@@ -68,7 +67,7 @@ export function PropertyFeaturesModal({ isOpen, onClose, selectedPolicyId }: Pro
       await apiRequest("DELETE", `/api/features/${featureId}`, undefined);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/policies", selectedPolicyIdState, "features"] });
+      queryClient.invalidateQueries({ queryKey: ["http://localhost:5001/api/policies", selectedPolicyIdState, "features"] });
     },
   });
 
@@ -107,7 +106,7 @@ export function PropertyFeaturesModal({ isOpen, onClose, selectedPolicyId }: Pro
       newSelectedFeatures.delete(featureName);
       setSelectedFeatures(newSelectedFeatures);
       
-      const existingFeature = existingFeatures.find(f => f.featureName === featureName);
+      const existingFeature = features.find(f => f.featureName === featureName);
       if (existingFeature) {
         try {
           await deleteFeatureMutation.mutateAsync(existingFeature.id);

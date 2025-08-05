@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 export default function RoofingInvoices() {
   const { data: invoices = [], isLoading } = useQuery<RoofingInvoice[]>({
-    queryKey: ["/api/roofing-invoices"],
+    queryKey: ["http://localhost:5001/api/roofing-invoices"],
   });
 
   const getStatusColor = (status: string) => {

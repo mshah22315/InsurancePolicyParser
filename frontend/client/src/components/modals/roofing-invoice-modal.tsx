@@ -61,8 +61,7 @@ export function RoofingInvoiceModal({ isOpen, onClose, selectedPolicyId }: Roofi
   const queryClient = useQueryClient();
 
   const { data: policies = [] } = useQuery<Policy[]>({
-    queryKey: ["/api/policies"],
-    enabled: isOpen,
+    queryKey: ["http://localhost:5001/api/policies"],
   });
 
   const form = useForm<RoofingInvoiceForm>({
@@ -99,8 +98,8 @@ export function RoofingInvoiceModal({ isOpen, onClose, selectedPolicyId }: Roofi
         title: "Success",
         description: "Roofing invoice uploaded successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/roofing-invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/policies"] });
+      queryClient.invalidateQueries({ queryKey: ["http://localhost:5001/api/roofing-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["http://localhost:5001/api/policies"] });
       onClose();
       form.reset();
       setSelectedFile(null);

@@ -8,18 +8,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Policy } from "@shared/schema";
 import { Search, Download, Eye } from "lucide-react";
 import { useState } from "react";
+import { PolicyDetailsModal } from "@/components/modals/policy-details-modal";
 
 export default function PolicyLibrary() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInsurer, setSelectedInsurer] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedPolicyId, setSelectedPolicyId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const { data: policies = [], isLoading } = useQuery<Policy[]>({
-    queryKey: ["/api/policies"],
+    queryKey: ["http://localhost:5001/api/policies"],
   });
 
   const { data: searchResults = [] } = useQuery<Policy[]>({
-    queryKey: ["/api/policies/search", searchQuery],
+    queryKey: ["http://localhost:5001/api/policies/search", searchQuery],
     enabled: searchQuery.length > 2,
   });
 
@@ -45,6 +48,16 @@ export default function PolicyLibrary() {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleViewPolicy = (policyId: number) => {
+    setSelectedPolicyId(policyId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedPolicyId(null);
   };
 
   return (
@@ -151,7 +164,12 @@ export default function PolicyLibrary() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-blue-600 hover:text-blue-700"
+                          onClick={() => handleViewPolicy(policy.id)}
+                        >
                           <Eye className="w-4 h-4 mr-1" />
                           View
                         </Button>
@@ -164,6 +182,13 @@ export default function PolicyLibrary() {
           )}
         </CardContent>
       </Card>
+
+      {/* Policy Details Modal */}
+      <PolicyDetailsModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        policyId={selectedPolicyId}
+      />
     </div>
   );
 }

@@ -20,9 +20,9 @@ const statusDots = {
 };
 
 export function ProcessingStatus() {
-  const { data: tasks = [] } = useQuery<ProcessingTask[]>({
-    queryKey: ["/api/processing-tasks"],
-    refetchInterval: 5000, // Refetch every 5 seconds
+  const { data: tasks = [], isLoading } = useQuery<ProcessingTask[]>({
+    queryKey: ["http://localhost:5001/api/processing-tasks"],
+    refetchInterval: 2000, // Refetch every 2 seconds for real-time updates
   });
 
   const recentTasks = tasks.slice(0, 5);

@@ -23,12 +23,12 @@ interface PolicyDetailsModalProps {
 
 export function PolicyDetailsModal({ isOpen, onClose, policyId }: PolicyDetailsModalProps) {
   const { data: policy, isLoading } = useQuery<Policy>({
-    queryKey: ["/api/policies", policyId],
+    queryKey: [`http://localhost:5001/api/policies/${policyId}`],
     enabled: !!policyId && isOpen,
   });
 
   const { data: features = [] } = useQuery<PropertyFeature[]>({
-    queryKey: ["/api/policies", policyId, "features"],
+    queryKey: [`http://localhost:5001/api/policies/${policyId}/features`],
     enabled: !!policyId && isOpen,
   });
 
@@ -170,40 +170,6 @@ export function PolicyDetailsModal({ isOpen, onClose, policyId }: PolicyDetailsM
                       {policy.updatedAt ? format(new Date(policy.updatedAt), "PPP") : "N/A"}
                     </p>
                   </div>
-
-                  <div>
-                    <p className="text-sm text-gray-600">Document Source</p>
-                    <p className="font-medium">
-                      {policy.documentSourceFilename || "N/A"}
-                    </p>
-                    {policy.documentSourceFilename && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={async () => {
-                          try {
-                            const response = await fetch(`http://localhost:5001/api/policies/${policyId}/download`, {
-                              credentials: 'include'
-                            });
-                            if (response.ok) {
-                              const data = await response.json();
-                              // For now, just show the download URL
-                              // In a real implementation, you would trigger a download
-                              alert(`Download URL: ${data.downloadUrl}`);
-                            } else {
-                              alert('Download not available');
-                            }
-                          } catch (error) {
-                            alert('Failed to get download link');
-                          }
-                        }}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Document
-                      </Button>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -213,38 +179,44 @@ export function PolicyDetailsModal({ isOpen, onClose, policyId }: PolicyDetailsM
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Home className="w-5 h-5" />
-                  Property Features
+                  Property Features & Roof Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {features.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Home className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No property features recorded</p>
-                    <Button variant="outline" className="mt-4">
-                      Add Features
-                    </Button>
+                <div className="space-y-4">
+                  {/* Roof Age */}
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">Roof Information</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-blue-700">Roof Age:</span>
+                      <span className="font-medium text-blue-900">
+                        {policy.roofAgeYears ? `${policy.roofAgeYears} years` : "Not specified"}
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {features.map((feature) => (
-                      <div key={feature.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{feature.featureName}</p>
-                          {feature.featureDescription && (
-                            <p className="text-sm text-gray-600">{feature.featureDescription}</p>
-                          )}
-                          {feature.discountPercentage && (
-                            <p className="text-sm text-green-600 font-medium">
-                              {feature.discountPercentage}% discount
-                            </p>
-                          )}
-                        </div>
+
+                  {/* Property Features */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Property Features</h4>
+                    {policy.propertyFeatures && policy.propertyFeatures.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {policy.propertyFeatures.map((feature, index) => (
+                          <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{feature}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-center py-4">
+                        <Home className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500">No property features recorded</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
@@ -271,10 +243,18 @@ export function PolicyDetailsModal({ isOpen, onClose, policyId }: PolicyDetailsM
                       <TableBody>
                         {policy.coverageDetails.map((coverage, index) => (
                           <TableRow key={index}>
-                            <TableCell className="font-medium">{coverage.coverageType}</TableCell>
-                            <TableCell>{formatCurrency(coverage.limit)}</TableCell>
-                            <TableCell>{formatCurrency(coverage.deductible)}</TableCell>
-                            <TableCell>{formatCurrency(coverage.premium)}</TableCell>
+                            <TableCell className="font-medium">
+                              {coverage.coverageType || coverage.coverage_type}
+                            </TableCell>
+                            <TableCell>
+                              {coverage.limit ? formatCurrency(parseFloat(coverage.limit)) : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              {coverage.deductible ? formatCurrency(coverage.deductible) : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              {coverage.premium ? formatCurrency(coverage.premium) : "N/A"}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -297,9 +277,15 @@ export function PolicyDetailsModal({ isOpen, onClose, policyId }: PolicyDetailsM
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {policy.deductibles.map((deductible, index) => (
                       <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">{deductible.coverageType}</h4>
-                        <p className="text-lg font-semibold">{formatCurrency(deductible.amount)}</p>
-                        <p className="text-sm text-gray-600 capitalize">{deductible.type}</p>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          {deductible.coverageType || deductible.coverage_type}
+                        </h4>
+                        <p className="text-lg font-semibold">
+                          {deductible.amount ? formatCurrency(parseFloat(deductible.amount)) : "N/A"}
+                        </p>
+                        <p className="text-sm text-gray-600 capitalize">
+                          {deductible.type || "per occurrence"}
+                        </p>
                       </div>
                     ))}
                   </div>

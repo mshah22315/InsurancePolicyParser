@@ -3,7 +3,6 @@ import json
 from datetime import datetime, date
 from io import BytesIO
 from PIL import Image
-import fitz  # PyMuPDF
 from flask import current_app
 from ..models import ProcessedPolicyData
 from ..db import db

@@ -44,7 +44,7 @@ export default function Dashboard() {
   };
 
   // Extract stats from API response
-  const stats = statsResponse?.data || defaultStats;
+  const stats = (statsResponse?.data as DashboardStats) || (statsResponse as DashboardStats) || defaultStats;
 
   return (
     <div className="p-6 space-y-6">

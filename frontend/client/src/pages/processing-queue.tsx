@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 export default function ProcessingQueue() {
   const { data: tasks = [], isLoading } = useQuery<ProcessingTask[]>({
-    queryKey: ["/api/processing-tasks"],
+    queryKey: ["http://localhost:5001/api/processing-tasks"],
     refetchInterval: 2000, // Refetch every 2 seconds for real-time updates
   });
 
