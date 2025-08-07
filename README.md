@@ -116,7 +116,7 @@ npm run dev
 
 ### 7. Access the Application
 - **Frontend**: http://localhost:5000
-- **Backend API**: http://localhost:5001
+- **Backend API**: http://localhost:5173
 - **Health Check**: http://localhost:5001/pipeline/health
 
 ## 📊 API Endpoints
