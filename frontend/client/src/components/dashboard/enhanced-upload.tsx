@@ -17,7 +17,6 @@ interface UploadFormData {
 }
 
 export function EnhancedUpload() {
-  const [uploadType, setUploadType] = useState<"policy" | "roofing">("policy");
   const [formData, setFormData] = useState<UploadFormData>({
     policyNumber: "",
     installationDate: "",
@@ -27,17 +26,13 @@ export function EnhancedUpload() {
   const { toast } = useToast();
 
   const { uploadFiles, isUploading } = useFileUpload({
-    endpoint: uploadType === "policy" 
-      ? "http://localhost:5001/api/policies/upload"
-      : "http://localhost:5001/api/roofing-invoices/upload",
+    endpoint: "http://localhost:5001/api/policies/upload",
     acceptedTypes: ["application/pdf"],
     maxSize: 10 * 1024 * 1024, // 10MB
     onSuccess: (response) => {
       toast({
         title: "Upload Successful",
-        description: uploadType === "policy" 
-          ? `Policy processing started with task ID: ${response.taskId}`
-          : `Roofing invoice uploaded successfully`,
+        description: `Policy processing started with task ID: ${response.taskId}`,
       });
     },
     onError: (error) => {
@@ -53,11 +48,6 @@ export function EnhancedUpload() {
     const additionalData: Record<string, any> = {
       policyNumber: formData.policyNumber,
     };
-
-    if (uploadType === "roofing") {
-      additionalData.installationDate = formData.installationDate;
-      additionalData.workDescription = formData.workDescription;
-    }
 
     if (formData.propertyFeatures.length > 0) {
       additionalData.propertyFeatures = formData.propertyFeatures;
@@ -91,25 +81,9 @@ export function EnhancedUpload() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            {uploadType === "policy" ? <FileText className="w-5 h-5" /> : <Home className="w-5 h-5" />}
-            {uploadType === "policy" ? "Upload Policy Documents" : "Upload Roofing Invoice"}
+            <FileText className="w-5 h-5" />
+            Upload Policy Documents
           </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant={uploadType === "policy" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setUploadType("policy")}
-            >
-              Policy Documents
-            </Button>
-            <Button
-              variant={uploadType === "roofing" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setUploadType("roofing")}
-            >
-              Roofing Invoice
-            </Button>
-          </div>
         </div>
       </CardHeader>
       
@@ -126,29 +100,7 @@ export function EnhancedUpload() {
           />
         </div>
 
-        {/* Roofing-specific fields */}
-        {uploadType === "roofing" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="installationDate">Installation Date</Label>
-              <Input
-                id="installationDate"
-                type="date"
-                value={formData.installationDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, installationDate: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="workDescription">Work Description</Label>
-              <Input
-                id="workDescription"
-                placeholder="Describe the roofing work performed"
-                value={formData.workDescription}
-                onChange={(e) => setFormData(prev => ({ ...prev, workDescription: e.target.value }))}
-              />
-            </div>
-          </div>
-        )}
+
 
         {/* Property Features Selection */}
         <div>
@@ -170,12 +122,12 @@ export function EnhancedUpload() {
 
         {/* File Upload */}
         <div>
-          <Label>Upload {uploadType === "policy" ? "Policy Document" : "Roofing Invoice"}</Label>
+          <Label>Upload Policy Document</Label>
           <FileUpload
             onFileUpload={handleFileUpload}
             acceptedTypes={["application/pdf"]}
             maxSize={10 * 1024 * 1024}
-            multiple={uploadType === "policy"}
+            multiple={true}
             isUploading={isUploading}
           />
         </div>
@@ -193,7 +145,7 @@ export function EnhancedUpload() {
           }}
         >
           <Upload className="w-4 h-4 mr-2" />
-          {isUploading ? "Uploading..." : `Upload ${uploadType === "policy" ? "Policy Document" : "Roofing Invoice"}`}
+          {isUploading ? "Uploading..." : "Upload Policy Document"}
         </Button>
       </CardContent>
     </Card>

@@ -54,25 +54,7 @@ class PolicyChunk(db.Model):
     # The actual column will be created in the migration as: embedding vector(768)
 
 
-class RoofingInvoice(db.Model):
-    __tablename__ = 'roofing_invoices'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(255), nullable=False)
-    policy_id = db.Column(db.Integer, db.ForeignKey('processed_policy_data.id'), nullable=True)
-    installation_date = db.Column(db.Date, nullable=True)
-    roof_age_years = db.Column(db.Integer, nullable=True)
-    work_description = db.Column(db.Text, nullable=True)
-    processing_status = db.Column(db.String(50), default='uploaded')
-    original_document_path = db.Column(db.String(500), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationship
-    policy = db.relationship('ProcessedPolicyData', backref='roofing_invoices')
-    
-    def __repr__(self):
-        return f'<RoofingInvoice {self.filename}>'
+
 
 class ProcessingTask(db.Model):
     __tablename__ = 'processing_tasks'

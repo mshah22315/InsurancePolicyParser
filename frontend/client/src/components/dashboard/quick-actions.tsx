@@ -6,12 +6,6 @@ import { Link } from "wouter";
 export function QuickActions() {
   const actions = [
     {
-      title: "Upload Roofing Invoice",
-      icon: Home,
-      description: "Calculate roof age and update policy",
-      href: "/roofing-invoices",
-    },
-    {
       title: "Manage Property Features",
       icon: Settings,
       description: "Add or update property features",

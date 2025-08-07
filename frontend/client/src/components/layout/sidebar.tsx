@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Upload & Manage", href: "/upload-policy", icon: Upload },
+  { name: "Upload Policy", href: "/upload-policy", icon: Upload },
   { name: "Policy Library", href: "/policy-library", icon: FileText },
   { name: "Policy Context", href: "/policy-context", icon: Edit3 },
   { name: "Property Risk Factors", href: "/property-risk-factors", icon: AlertTriangle },

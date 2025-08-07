@@ -7,7 +7,7 @@ A comprehensive insurance policy processing application that uses AI to extract,
 ### Core Functionality
 - **Document Processing**: Upload and process insurance policy PDFs using AI
 - **Policy Query System**: Ask natural language questions about policies
-- **Roofing Invoice Processing**: Upload roofing invoices with policy linking
+
 - **Property Features**: Track property features and roof age
 - **Policy Context Updates**: Update policy renewal dates and property features
 - **Vector Search**: AI-powered document search and retrieval
@@ -127,7 +127,7 @@ npm run dev
 - `GET /api/policies/:id` - Get specific policy
 - `GET /api/policies/search?q=query` - Search policies
 - `POST /api/policies/upload` - Upload policy document
-- `POST /api/roofing-invoices/upload` - Upload roofing invoice
+
 - `POST /api/policies/query` - Query policy documents
 - `PATCH /api/policies/:id/context` - Update policy context
 
@@ -175,7 +175,7 @@ InsurancePolicyParser/
 ### Database Models
 - **ProcessedPolicyData**: Stores processed policy information
 - **PolicyChunk**: Stores document chunks for vector search
-- **RoofingInvoice**: Stores roofing invoice data
+
 - **ProcessingTask**: Tracks processing task status
 
 ## 🧪 Testing
@@ -185,7 +185,7 @@ InsurancePolicyParser/
 # Backend tests
 python test_complete_workflow.py
 python test_policy_context_update.py
-python test_roofing_invoice_features.py
+
 
 # Frontend tests
 cd frontend
@@ -194,7 +194,7 @@ npm test
 
 ### Test Features
 - Policy document upload and processing
-- Roofing invoice upload with policy linking
+
 - Policy query system with AI responses
 - Property features and roof age calculation
 - Policy context updates

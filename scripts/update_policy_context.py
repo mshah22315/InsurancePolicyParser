@@ -5,7 +5,7 @@ Script to update a single policy with realistic context data.
 This script:
 1. Takes a policy number as user input
 2. Extracts renewal date from policy document expiration date
-3. Uses InvoiceParser to extract installation date from roofing invoices
+3. Updates property features and renewal dates
 4. Allows user input for property features
 5. Updates the policy with the collected data
 
@@ -134,64 +134,7 @@ def extract_expiration_date_from_policy(policy_number):
         except KeyboardInterrupt:
             return None
 
-def get_roofing_invoice_path(policy_number=None):
-    """
-    Get the path to a roofing invoice file from user input.
-    
-    Args:
-        policy_number: Optional policy number to filter related invoices
-        
-    Returns:
-        str: Path to the invoice file, or None if user cancels
-    """
-    print("\n" + "="*50)
-    print("ROOFING INVOICE INPUT")
-    print("="*50)
-    
-    # Find available invoice files
-    data_dir = str(Path(project_root) / "data")
-    invoice_files = find_invoice_files(data_dir, policy_number)
-    
-    if invoice_files:
-        print("Found roofing-related files:")
-        for i, file_path in enumerate(invoice_files, 1):
-            print(f"  {i:2d}. {os.path.basename(file_path)}")
-        print()
-    
-    print("Options:")
-    if invoice_files:
-        print("1. Enter the number of an existing file above")
-    print("2. Enter the full path to a roofing invoice file")
-    print("3. Type 'skip' to enter roof date manually")
-    print("4. Type 'none' if no roofing work has been done")
-    
-    while True:
-        try:
-            choice = input("\nEnter your choice: ").strip()
-            
-            if choice.lower() == 'skip':
-                return None
-            elif choice.lower() == 'none':
-                return "none"
-            
-            # Check if it's a number (existing file)
-            try:
-                file_index = int(choice) - 1
-                if 0 <= file_index < len(invoice_files):
-                    return invoice_files[file_index]
-                else:
-                    print("❌ Invalid file number")
-                    continue
-            except ValueError:
-                # Assume it's a file path
-                if os.path.exists(choice):
-                    return choice
-                else:
-                    print(f"❌ File not found: {choice}")
-                    continue
-                    
-        except KeyboardInterrupt:
-            return None
+
 
 def get_user_features():
     """
@@ -404,79 +347,32 @@ def update_policy_context(policy_number, roof_age=None, features=None, renewal_d
             else:
                 logger.warning("No expiration date found in database for this policy")
         
-        # Calculate roof age from invoice if not provided
+        # Calculate roof age if not provided
         if roof_age is None:
-            # Get roofing invoice path from user
-            invoice_path = get_roofing_invoice_path(policy_number)
-            
-            if invoice_path == "none":
-                logger.info("No roofing work has been done")
-                roof_age = None
-            elif invoice_path:
-                # Use InvoiceParser to extract date from invoice
-                invoice_date = extract_installation_date_from_invoice(invoice_path)
-                
-                if invoice_date:
-                    roof_age = calculate_roof_age(invoice_date)
-                    logger.info(f"Calculated roof age: {roof_age} years (from {invoice_date})")
-                else:
-                    logger.warning("Could not extract roof date from invoice")
-                    # Fallback to manual input
-                    print("\nCould not automatically extract date from invoice.")
-                    print("Please enter the roof installation date manually:")
-                    
-                    while True:
-                        try:
-                            manual_date = input("Installation date (MM/DD/YYYY or YYYY-MM-DD): ").strip()
-                            if not manual_date:
-                                break
-                            
-                            # Try to parse the date
-                            if "/" in manual_date:
-                                month, day, year = manual_date.split("/")
-                                if len(year) == 2:
-                                    year = "20" + year
-                                roof_installation_date = date(int(year), int(month), int(day))
-                            elif "-" in manual_date:
-                                roof_installation_date = datetime.strptime(manual_date, '%Y-%m-%d').date()
-                            else:
-                                print("❌ Invalid date format. Please use MM/DD/YYYY or YYYY-MM-DD")
-                                continue
-                            
-                            roof_age = calculate_roof_age(roof_installation_date.strftime('%Y-%m-%d'))
-                            logger.info(f"Manual input - Calculated roof age: {roof_age} years")
-                            break
-                            
-                        except ValueError:
-                            print("❌ Invalid date. Please try again.")
-                        except KeyboardInterrupt:
-                            break
-            else:
-                # Prompt for manual input if skipped
-                print("\nNo invoice provided. Please enter the roof installation date manually.")
-                while True:
-                    try:
-                        manual_date = input("Installation date (MM/DD/YYYY or YYYY-MM-DD): ").strip()
-                        if not manual_date:
-                            break
-                        # Try to parse the date
-                        if "/" in manual_date:
-                            month, day, year = manual_date.split("/")
-                            if len(year) == 2:
-                                year = "20" + year
-                            roof_installation_date = date(int(year), int(month), int(day))
-                        elif "-" in manual_date:
-                            roof_installation_date = datetime.strptime(manual_date, '%Y-%m-%d').date()
-                        else:
-                            print("❌ Invalid date format. Please use MM/DD/YYYY or YYYY-MM-DD")
-                            continue
-                        roof_age = calculate_roof_age(roof_installation_date.strftime('%Y-%m-%d'))
-                        logger.info(f"Manual input - Calculated roof age: {roof_age} years")
+            print("\nPlease enter the roof installation date manually:")
+            while True:
+                try:
+                    manual_date = input("Installation date (MM/DD/YYYY or YYYY-MM-DD): ").strip()
+                    if not manual_date:
                         break
-                    except ValueError:
-                        print("❌ Invalid date. Please try again.")
-                    except KeyboardInterrupt:
-                        break
+                    # Try to parse the date
+                    if "/" in manual_date:
+                        month, day, year = manual_date.split("/")
+                        if len(year) == 2:
+                            year = "20" + year
+                        roof_installation_date = date(int(year), int(month), int(day))
+                    elif "-" in manual_date:
+                        roof_installation_date = datetime.strptime(manual_date, '%Y-%m-%d').date()
+                    else:
+                        print("❌ Invalid date format. Please use MM/DD/YYYY or YYYY-MM-DD")
+                        continue
+                    roof_age = calculate_roof_age(roof_installation_date.strftime('%Y-%m-%d'))
+                    logger.info(f"Manual input - Calculated roof age: {roof_age} years")
+                    break
+                except ValueError:
+                    print("❌ Invalid date. Please try again.")
+                except KeyboardInterrupt:
+                    break
         
         # Get features from user if not provided
         if features is None:
@@ -563,7 +459,7 @@ def find_invoice_files(data_dir: str, policy_number: str = None) -> list:
     data_path = Path(data_dir)
     if not data_path.exists():
         return invoice_files
-    invoice_keywords = ["roof", "roofing", "shingle", "gutter", "siding", "invoice"]
+
     for subdir in data_path.iterdir():
         if subdir.is_dir():
             for file_path in subdir.rglob("*"):

@@ -422,7 +422,7 @@ def update_context_step(self, policy_numbers: List[str], invoice_paths: Optional
 @celery.task
 def update_context_interactive_step(policy_number: str) -> Dict[str, Any]:
     """
-    Interactive context update step that allows user input for roofing invoices and features.
+    Interactive context update step that allows user input for property features.
     This should be called separately after the main pipeline completes.
     """
     try:
@@ -438,7 +438,7 @@ def update_context_interactive_step(policy_number: str) -> Dict[str, Any]:
                 f'   python scripts/update_policy_context.py --policy {policy_number}',
                 '2. Or use the CLI command:',
                 f'   python scripts/manage_pipeline.py context-interactive --policy {policy_number}',
-                '3. Follow the prompts to upload roofing invoices and specify house features'
+                '3. Follow the prompts to specify house features'
             ]
         }
         

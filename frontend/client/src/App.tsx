@@ -7,7 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import UploadPolicy from "@/pages/upload-policy";
 import PolicyLibrary from "@/pages/policy-library";
 import ProcessingQueue from "@/pages/processing-queue"; 
-import RoofingInvoices from "@/pages/roofing-invoices";
+
 import PolicyContext from "@/pages/policy-context";
 import PropertyRiskFactors from "@/pages/property-risk-factors";
 import NotFound from "@/pages/not-found";
@@ -27,7 +27,7 @@ function Router() {
             <Route path="/upload-policy" component={UploadPolicy} />
             <Route path="/policy-library" component={PolicyLibrary} />
             <Route path="/processing-queue" component={ProcessingQueue} />
-            <Route path="/roofing-invoices" component={RoofingInvoices} />
+
             <Route path="/policy-context" component={PolicyContext} />
             <Route path="/property-risk-factors" component={PropertyRiskFactors} />
             <Route path="/policy-query" component={PolicyQueryPage} />

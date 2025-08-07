@@ -119,11 +119,7 @@ class ApiClient {
     return this.request(`/api/processing-tasks/${taskId}`);
   }
 
-  // Roofing invoices
-  async getRoofingInvoices(policyId?: number) {
-    const params = policyId ? `?policyId=${policyId}` : '';
-    return this.request(`/api/roofing-invoices${params}`);
-  }
+
 
   // Policy queries
   async queryPolicy(policyId: string, query: string) {

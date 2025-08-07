@@ -321,7 +321,7 @@ def start_interactive_context_update(policy_number):
                 f'   python scripts/update_policy_context.py --policy {policy_number}',
                 '2. Or use the CLI command:',
                 f'   python scripts/manage_pipeline.py context-interactive --policy {policy_number}',
-                '3. Follow the prompts to upload roofing invoices and specify house features'
+                '3. Follow the prompts to specify house features'
             ]
         }), 202
         

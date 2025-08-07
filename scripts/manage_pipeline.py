@@ -126,7 +126,7 @@ def run_interactive_context_update(policy_number: str):
     """
     print(f"Starting interactive context update for policy: {policy_number}")
     print("This will open the interactive update script where you can:")
-    print("- Upload roofing invoices")
+    
     print("- Specify house features")
     print("- Set renewal dates")
     print()

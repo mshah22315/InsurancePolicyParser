@@ -43,8 +43,7 @@ export default function ProcessingQueue() {
     switch (taskType) {
       case "policy_processing":
         return "Policy Processing";
-      case "roofing_invoice":
-        return "Roofing Invoice";
+      
       default:
         return taskType;
     }

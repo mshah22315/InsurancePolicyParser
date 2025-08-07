@@ -55,19 +55,6 @@ export const policyChunks = pgTable("policy_chunks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const roofingInvoices = pgTable("roofing_invoices", {
-  id: serial("id").primaryKey(),
-  policyId: integer("policy_id").references(() => policies.id),
-  filename: text("filename").notNull(),
-  installationDate: timestamp("installation_date"),
-  workDescription: text("work_description"),
-  roofAgeYears: integer("roof_age_years"),
-  invoiceAmount: real("invoice_amount"),
-  contractor: text("contractor"),
-  processingStatus: text("processing_status").default("pending"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 export const propertyFeatures = pgTable("property_features", {
   id: serial("id").primaryKey(),
   policyId: integer("policy_id").references(() => policies.id),
@@ -81,7 +68,7 @@ export const propertyFeatures = pgTable("property_features", {
 export const processingTasks = pgTable("processing_tasks", {
   id: serial("id").primaryKey(),
   taskId: uuid("task_id").notNull().unique(),
-  taskType: text("task_type").notNull(), // 'policy_processing', 'roofing_invoice', etc.
+  taskType: text("task_type").notNull(), // 'policy_processing', etc.
   status: text("status").default("pending"), // 'pending', 'processing', 'completed', 'failed'
   filename: text("filename"),
   progress: integer("progress").default(0),
@@ -94,20 +81,12 @@ export const processingTasks = pgTable("processing_tasks", {
 // Relations
 export const policiesRelations = relations(policies, ({ many }) => ({
   chunks: many(policyChunks),
-  roofingInvoices: many(roofingInvoices),
   propertyFeatures: many(propertyFeatures),
 }));
 
 export const policyChunksRelations = relations(policyChunks, ({ one }) => ({
   policy: one(policies, {
     fields: [policyChunks.policyId],
-    references: [policies.id],
-  }),
-}));
-
-export const roofingInvoicesRelations = relations(roofingInvoices, ({ one }) => ({
-  policy: one(policies, {
-    fields: [roofingInvoices.policyId],
     references: [policies.id],
   }),
 }));
@@ -139,11 +118,6 @@ export const insertPolicyChunkSchema = createInsertSchema(policyChunks).omit({
   createdAt: true,
 });
 
-export const insertRoofingInvoiceSchema = createInsertSchema(roofingInvoices).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertPropertyFeatureSchema = createInsertSchema(propertyFeatures).omit({
   id: true,
   createdAt: true,
@@ -164,9 +138,6 @@ export type InsertPolicy = z.infer<typeof insertPolicySchema>;
 
 export type PolicyChunk = typeof policyChunks.$inferSelect;
 export type InsertPolicyChunk = z.infer<typeof insertPolicyChunkSchema>;
-
-export type RoofingInvoice = typeof roofingInvoices.$inferSelect;
-export type InsertRoofingInvoice = z.infer<typeof insertRoofingInvoiceSchema>;
 
 export type PropertyFeature = typeof propertyFeatures.$inferSelect;
 export type InsertPropertyFeature = z.infer<typeof insertPropertyFeatureSchema>;
